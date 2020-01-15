@@ -1,0 +1,202 @@
+# Importing dataset:
+birthdays <- read.csv("~/Desktop/birthdays.csv")
+View(birthdays)
+
+# Checking for missing values:
+sum(is.na(birthdays))
+
+## The birthdays dataset given is a clean dataset with no missing values.
+
+# Converting Unix timestamp format:
+install.packages("anytime")
+library(anytime)
+birthdays$day <- anydate(birthdays$Birth.Date)
+class(birthdays$day)
+
+# Extracting month from date column:
+install.packages("lubridate")
+library(lubridate)
+birthdays$month <- month(as.POSIXlt(birthdays$day, format="%Y/%m/%d"))
+class(birthdays$month)
+View(birthdays)
+
+# Assigning seasons according to month numbers as stated in the problem:
+
+birthdays$season[birthdays$month == 12]<-"Winter"
+birthdays$season[birthdays$month == 1]<-"Winter"
+birthdays$season[birthdays$month == 2]<-"Winter"
+birthdays$season[birthdays$month == 3]<-"Spring"
+birthdays$season[birthdays$month == 4]<-"Spring"
+birthdays$season[birthdays$month == 5]<-"Spring"
+birthdays$season[birthdays$month == 6]<-"Summer"
+birthdays$season[birthdays$month == 7]<-"Summer"
+birthdays$season[birthdays$month == 8]<-"Summer"
+birthdays$season[birthdays$month == 9]<-"Fall"
+birthdays$season[birthdays$month == 10]<-"Fall"
+birthdays$season[birthdays$month == 11]<-"Fall"
+
+View(birthdays)
+
+#Checking the class of season column:
+class(birthdays$season)
+
+## As we can see, the class of season column is character.
+## But we need to convert character class to factor class for our algorithmic models to predict it.
+
+#Converting the class of season column to factor:
+birthdays$season <- as.factor(birthdays$season)
+class(birthdays$season)
+levels(birthdays$season)
+
+## Now, season column consists of 4 levels of "Fall", "Spring", "Summer", "Winter" respectively.
+
+class(birthdays$Latitude)
+class(birthdays$Longitude)
+class(birthdays$Birth.Date)
+
+# Splitting the complete dataset into training and testing dataset with replacement:
+set.seed(7658)
+index <- sample(2, nrow(birthdays), replace = T, prob = c(0.8, 0.2))
+train.data <- birthdays[index == 1, ]
+test.data <- birthdays[index == 2, ]
+
+## Our problem statement states to build a predictive model from labelled dataset which is a classical example of supervised machine learning models.
+## Moreover, the major task that model has to do is the classification of dataset into 4 different seasons.
+## Hence Decision trees, Random forests and SVM would be choices to build the predictive models.
+
+# Decision tree model to predict season:
+library(party)
+seasonmodel1 <- ctree(season ~ Latitude + Longitude + Birth.Date, data = train.data)
+seasonmodel1
+summary(seasonmodel1)
+
+# Predicting the season on testing dataset:
+test.data$predicted_season <- predict(seasonmodel1, newdata = test.data, type = "response")
+View(test.data)
+
+acc_table1 <- table(test.data$predicted_season, test.data$season)
+acc_table1
+acc1 <- sum(diag(acc_table1)) / sum(acc_table1)
+acc1
+## Decision tree model with replacement in training and testing datasets has an accuracy of 0.9782609
+
+plot(seasonmodel1,type="simple")
+
+# Splitting the complete dataset into training and testing dataset without replacement:
+size = floor(0.8*nrow(birthdays))
+train_ind = sample(seq_len(nrow(birthdays)),size = size)
+train_data = birthdays[train_ind,]
+test_data = birthdays[-train_ind,]
+
+# Decision tree model to predict season:
+library(party)
+seasonmodel2 <- ctree(season ~ Latitude + Longitude + Birth.Date, data = train_data)
+seasonmodel2
+summary(seasonmodel2)
+
+# Predicting the season on testing dataset:
+test_data$predicted_season <- predict(seasonmodel2, newdata = test_data, type = "response")
+View(test.data)
+acc_table2 <- table(test_data$predicted_season, test_data$season)
+acc_table2
+acc2 <- sum(diag(acc_table2)) / sum(acc_table2)
+acc2
+## Decision tree model without replacement in training and testing datasets has an accuracy of 0.98
+
+plot(seasonmodel2,type="simple")
+
+# Splitting the complete dataset into training and testing dataset with replacement:
+set.seed(7658)
+index <- sample(2, nrow(birthdays), replace = T, prob = c(0.8, 0.2))
+train.data <- birthdays[index == 1, ]
+test.data <- birthdays[index == 2, ]
+
+# SVM model to predict season:
+library(e1071)
+library(cwhmisc)
+seasonmodel3 <- svm(season ~ Latitude + Longitude + Birth.Date, data = train.data)
+seasonmodel3
+summary(seasonmodel3)
+
+# Predicting the season on testing dataset:
+test.data$predicted_season <- predict(seasonmodel3, newdata = test.data)
+View(test.data)
+acc_table3 <- table(test.data$predicted_season, test.data$season)
+acc_table3
+acc3 <- sum(diag(acc_table3)) / sum(acc_table3)
+acc3
+## SVM model with replacement in training and testing datasets has an accuracy of 0.9347826
+
+# Splitting the complete dataset into training and testing dataset without replacement:
+size = floor(0.8*nrow(birthdays))
+train_ind = sample(seq_len(nrow(birthdays)),size = size)
+train.data = birthdays[train_ind,]
+test.data = birthdays[-train_ind,]
+
+# SVM model to predict season:
+library(e1071)
+library(cwhmisc)
+seasonmodel4 <- svm(season ~ Latitude + Longitude + Birth.Date, data = train.data)
+seasonmodel4
+summary(seasonmodel4)
+
+# Predicting the season on testing dataset:
+test.data$predicted_season <- predict(seasonmodel4, newdata = test.data)
+View(test.data)
+acc_table4 <- table(test.data$predicted_season, test.data$season)
+acc_table4
+acc4 <- sum(diag(acc_table4)) / sum(acc_table4)
+acc4
+## SVM model without replacement in training and testing datasets has an accuracy of 0.87
+
+# Splitting the complete dataset into training and testing dataset with replacement:
+
+set.seed(7658)
+index <- sample(2, nrow(birthdays), replace = T, prob = c(0.8, 0.2))
+train.data <- birthdays[index == 1, ]
+test.data <- birthdays[index == 2, ]
+
+# Random forest model to predict season:
+install.packages("randomForest")
+library(randomForest)
+require(caTools)
+
+seasonmodel5 <- randomForest(season ~ Latitude + Longitude + Birth.Date, data = train.data)
+seasonmodel5
+summary(seasonmodel5)
+
+# Predicting the season on testing dataset:
+
+test.data$predicted_season <- predict(seasonmodel5, newdata = test.data)
+View(test.data)
+acc_table5 <- table(test.data$predicted_season, test.data$season)
+acc_table5
+acc5 <- sum(diag(acc_table5)) / sum(acc_table5)
+acc5
+## Random Forest model with replacement in training and testing datasets shows an accuracy of 0.9782609
+
+# Splitting the complete dataset into training and testing dataset without replacement:
+size = floor(0.8*nrow(birthdays))
+train_ind = sample(seq_len(nrow(birthdays)),size = size)
+train.data = birthdays[train_ind,]
+test.data = birthdays[-train_ind,]
+
+# Random forest model to predict season:
+seasonmodel6 <- randomForest(season ~ Latitude + Longitude + Birth.Date, data = train.data)
+seasonmodel6
+summary(seasonmodel6)
+
+# Predicting the season on testing dataset:
+
+test.data$predicted_season <- predict(seasonmodel6, newdata = test.data)
+View(test.data)
+acc_table6 <- table(test.data$predicted_season, test.data$season)
+acc_table6
+acc6 <- sum(diag(acc_table6)) / sum(acc_table6)
+acc6
+## Random Forest model without replacement in training and testing datasets shows an accuracy of 0.98
+
+### As we can see, Decision tree and Random forest models have an edge over SVM models to predict the season from (latitude, longitude, timestamp) tuple. 
+### Thus, seasonmodel2 and seasonmodel6 are the best classifiers.
+
+
